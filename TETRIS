@@ -1,0 +1,127 @@
+import tkinter as tk
+import random
+from tkinter import messagebox
+
+SIZE = 30
+moveX = 5
+moveY = 0
+type = random.randint(0,6)
+
+color = ["magenta", "blue", "cyan", "yellow", "orange", "red", "green","black","white"]
+
+#ミノデータ
+mino_T = [ 0,-1,-1, 0, 0, 0, 1, 0]
+mino_J = [-1,-1,-1, 0, 0, 0, 1, 0]
+mino_I = [-1, 0, 0, 0, 1, 0, 2, 0]
+mino_O = [ 0, 0, 1, 0, 0, 1, 1, 1]
+mino_L = [-1, 0, 0, 0, 1, 0, 1,-1]
+mino_Z = [-1, 0, 0, 0, 0, 1, 1, 1]
+mino_S = [ 0,-1, 1,-1,-1, 0, 0, 0]
+mino = [mino_T, mino_J, mino_I, mino_O, mino_L, mino_Z, mino_S]
+
+field = []
+for y in range (22):
+	sub = []
+	for x in range(12):
+		if x==0 or x ==11 or y==21 :
+			sub.append(8)
+		else :
+			sub.append(7)
+	field.append(sub)
+
+
+def drawTetris():
+	for i in range(4):
+		x = (mino[type][i*2]+moveX)*SIZE
+		y = (mino[type][i*2+1]+moveY)*SIZE
+		can.create_rectangle(x, y, x+SIZE, y+SIZE, fill=color[type])
+
+def drawField():
+	for i in range(21):
+		for j in range(12):
+			can.create_rectangle(j*SIZE, i*SIZE, (j+1)*SIZE, (i+1)*SIZE, fill=color[field[i+1][j]])
+
+def keyPress(event):       #ミノを動かす関数
+	global moveX, moveY
+	afterX = moveX
+	afterY = moveY
+	aftermino = []
+	aftermino.extend(mino[type])
+	if event.keysym=="Right" :
+		afterX += 1 
+	elif event.keysym=="Left" :
+		afterX -= 1
+	elif event.keysym=="Down" :
+		afterY += 1
+	#elif event.keysym=="Up" :
+	#	afterY -= 1	
+	elif event.keysym=="space" :
+		aftermino.clear()
+		for i in range(4):
+			aftermino.append(mino[type][i*2+1]*(-1))
+			aftermino.append(mino[type][i*2])
+	judge(afterX, afterY, aftermino)
+
+def judge(afterX, afterY, aftermino):
+	global moveX, moveY
+	result = True
+	for i in range(4):
+		x = aftermino[i*2]+afterX
+		y = aftermino[i*2+1]+afterY
+		if field[y+1][x]!=7 :
+			result = False
+	if result==True :
+		moveX = afterX
+		moveY = afterY
+		mino[type].clear()
+		mino[type].extend(aftermino)
+	return result
+
+def dropTetris():
+	global moveX, moveY, type
+	afterTetro = []
+	afterTetro.extend(mino[type])
+	result = judge(moveX, moveY+1, afterTetro)
+	if result==False :
+		for i in range(4):
+			x = mino[type][i*2]+moveX
+			y = mino[type][i*2+1]+moveY
+			field[y+1][x] = type
+		deleteLine()
+		type = random.randint(0, 6)
+		moveX = 4
+		moveY = 0
+	can.after(1000, dropTetris)
+
+def deleteLine():
+	for i in range(1, 21):
+		if 7 not in field[i]:
+			for j in range(i):
+				for k in range(12):
+					field[i-j][k] = field[i-j-1][k]
+	for i in range(1, 11):
+		if 7 != field[1][i]:
+			messagebox.showinfo("information", "GAME OVER !")
+			exit()
+
+
+
+######################## ゲームループ ##############################
+win = tk.Tk()
+can = tk.Canvas(win, width=12*SIZE, height=21*SIZE)
+can.pack()
+# 画面タイトル
+win.title('テトリス')
+win.bind("<Any-KeyPress>", keyPress)
+
+def gameLoop():
+	can.delete("all")
+	drawField()
+	drawTetris()
+	can.after(50, gameLoop)
+
+gameLoop()
+dropTetris()
+
+# 画面をそのまま表示
+win.mainloop()
